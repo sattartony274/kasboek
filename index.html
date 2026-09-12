@@ -1,92 +1,767 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kasboek</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-    h1 { color: #333; }
-    .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
-    button { background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background-color: #0056b3; }
-    ul { list-style-type: none; padding: 0; }
-    li { background: #eee; margin: 5px 0; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kasboek</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#000000">
+<style>
+  :root{
+    --paper: #f7f5ee;
+    --paper-dark: #ddd5bd;
+    --ink: #000000;
+    --ink-soft: #3f4640;
+    --line: #b9b192;
+    --debit: #a13d2e;
+    --credit: #3d6b4a;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Courier New', ui-monospace, Menlo, monospace;
+    font-size: 16px;
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: 34px;
+    letter-spacing: 0.5px;
+    margin: 0 0 6px;
+    color: #000000;
+  }
+  .sub {
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin: 0 0 28px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 20px;
+  }
+  .balance-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .balance-card::before {
+    content: "";
+    position: absolute;
+    top: 6px; left: 6px; right: 6px; bottom: 6px;
+    border: 1px dashed var(--line);
+    pointer-events: none;
+  }
+  .balance-label {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+  .balance-amount {
+    font-family: Georgia, serif;
+    font-size: 50px;
+    font-weight: 700;
+    margin: 6px 0 2px;
+    color: #000000;
+  }
+  .balance-sub {
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .mini {
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .mini .balance-label { font-size: 13px; }
+  .mini .amt { font-size: 21px; font-weight: 700; margin-top: 2px; color: #000000; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .panel h2 {
+    font-family: Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    color: #000000;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+  }
+  input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 17px;
+    padding: 11px 10px;
+    background: #fbf9f2;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 2px;
+  }
+  input:focus { outline: 2px solid var(--ink-soft); outline-offset: 1px; }
+  .field { margin-bottom: 12px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  button {
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 13px 16px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .btn-main {
+    background: var(--ink);
+    color: var(--paper);
+    width: 100%;
+    letter-spacing: 0.5px;
+  }
+  .btn-main:active { transform: scale(0.99); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-weight: 400;
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  .err {
+    color: var(--debit);
+    font-size: 14px;
+    font-weight: 700;
+    margin: -6px 0 12px;
+  }
+
+  .month-group { margin-bottom: 4px; }
+  .month-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    font-size: 15px;
+  }
+  .month-head .name { font-weight: 700; color: #000000; }
+  .month-head .total { color: var(--debit); font-weight: 700; }
+  .entries { display: none; }
+  .entries.open { display: block; }
+  .entry {
+    display: grid;
+    grid-template-columns: 100px 1fr auto auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 10px 4px;
+    border-bottom: 1px dotted var(--line);
+    font-size: 15px;
+  }
+  .entry .when { color: var(--ink-soft); font-size: 13px; }
+  .entry .note { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .entry .amt { color: var(--debit); font-weight: 700; text-align: right; }
+  .entry .rest { color: var(--ink-soft); text-align: right; font-size: 13px; min-width: 70px; }
+  .entry .del { cursor: pointer; color: var(--ink-soft); font-size: 13px; padding: 0 4px; text-decoration: underline; }
+  .empty { color: var(--ink-soft); font-size: 15px; padding: 16px 4px; text-align: center; }
+
+  .year-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 12px 4px 4px;
+    color: #000000;
+    border-top: 2px solid var(--ink);
+    margin-top: 6px;
+  }
+  .setup-row { display: flex; gap: 10px; align-items: flex-end; }
+  .setup-row .field { flex: 1; margin-bottom: 0; }
+  .preset-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  select {
+    width: 100%;
+    font-family: inherit;
+    font-size: 16px;
+    padding: 11px 10px;
+    background: #fbf9f2;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 2px;
+  }
+  select:focus { outline: 2px solid var(--ink-soft); outline-offset: 1px; }
+  .btn-add {
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 700;
+    width: 46px;
+    flex-shrink: 0;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .btn-remove {
+    background: var(--debit);
+    font-size: 18px;
+  }
+  .footer-note { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: 24px; }
+
+  .lock-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+  }
+  .lock-box {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 28px 24px;
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+  }
+  .lock-box h2 {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    color: #000000;
+  }
+  .lock-box p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0 0 18px;
+  }
+  .lock-box input {
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .lock-err {
+    color: var(--debit);
+    font-size: 14px;
+    font-weight: 700;
+    min-height: 20px;
+    margin-bottom: 8px;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Kasboek</h1>
-    <div id="auth-section">
-      <input type="text" id="password" placeholder="Voer wachtwoord in">
-      <button onclick="checkPassword()">Inloggen</button>
-    </div>
-    <div id="app-section" style="display:none;">
-      <input type="text" id="desc" placeholder="Omschrijving">
-      <input type="number" id="amount" placeholder="Bedrag (€)">
-      <button onclick="addTransaction()">Toevoegen</button>
-      <h3>Transacties</h3>
-      <ul id="transaction-list"></ul>
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <h2>Kasboek</h2>
+    <p>Voer je wachtwoord in om verder te gaan.</p>
+    <input type="text" id="lockPassword" placeholder="Wachtwoord" autocomplete="off">
+    <div class="lock-err" id="lockErr"></div>
+    <button class="btn-main" id="lockSubmit">Openen</button>
+  </div>
+</div>
+<div class="wrap" id="mainApp" style="display:none;">
+  <h1>Kasboek</h1>
+  <p class="sub">Startbedrag, opnames en resterend saldo — automatisch bijgehouden.</p>
+
+  <div class="balance-card">
+    <div class="balance-label">Nog beschikbaar</div>
+    <div class="balance-amount" id="balanceAmount">€ 0,00</div>
+    <div class="balance-sub" id="balanceSub">van € 0,00 totaal</div>
+    <div class="row2">
+      <div class="mini">
+        <div class="balance-label" id="monthLabel">Deze maand opgenomen</div>
+        <div class="amt" id="monthTotal">€ 0,00</div>
+      </div>
+      <div class="mini">
+        <div class="balance-label" id="yearLabel">Dit jaar opgenomen</div>
+        <div class="amt" id="yearTotal">€ 0,00</div>
+      </div>
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <div class="panel" id="setupPanel">
+    <h2>Startbedrag instellen</h2>
+    <div class="setup-row">
+      <div class="field">
+        <label for="startAmount">Totaal bedrag (€)</label>
+        <input type="number" id="startAmount" value="4000" step="0.01" min="0">
+      </div>
+      <button class="btn-main" style="width:auto;" id="setStartBtn">Instellen</button>
+    </div>
+  </div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBw-A3I8f8A0mC7J5K0",
-      authDomain: "kasboek-c0500.firebaseapp.com",
-      databaseURL: "https://kasboek-c0500-default-rtdb.firebaseio.com",
-      projectId: "kasboek-c0500",
-      storageBucket: "kasboek-c0500.appspot.com",
-      messagingSenderId: "129184310893",
-      appId: "1:129184310893:web:5d2a9316d2fa5bb4d1ad"
-    };
+  <div class="panel">
+    <h2>Opname toevoegen</h2>
+    <div class="field-row">
+      <div class="field">
+        <label for="amountInput">Bedrag (€)</label>
+        <input type="number" id="amountInput" placeholder="250" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label for="dateInput">Datum</label>
+        <input type="date" id="dateInput">
+      </div>
+    </div>
+    <div class="field">
+      <label>Winkel</label>
+      <div class="preset-row">
+        <select id="presetSelect">
+          <option value="">— kies een winkel —</option>
+        </select>
+        <button type="button" class="btn-add" id="addPresetBtn" aria-label="Eigen winkel toevoegen">+</button>
+        <button type="button" class="btn-add btn-remove" id="removePresetBtn" aria-label="Geselecteerde winkel verwijderen" style="display:none;">✕</button>
+      </div>
+      <div id="newPresetRow" style="display:none; margin-top:10px;">
+        <div class="preset-row">
+          <input type="text" id="newPresetInput" placeholder="Naam van de nieuwe winkel">
+          <button type="button" class="btn-add" id="confirmPresetBtn" aria-label="Winkel opslaan" style="width:46px;">✓</button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="noteInput">Notitie (optioneel)</label>
+      <input type="text" id="noteInput" placeholder="bijv. pakket, boodschappen">
+    </div>
+    <div class="err" id="errMsg" style="display:none;"></div>
+    <button class="btn-main" id="addBtn">Opname boeken</button>
+  </div>
 
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+  <div class="panel">
+    <h2>Geschiedenis</h2>
+    <div id="history"></div>
+    <div class="year-total" id="grandTotal" style="display:none;"></div>
+  </div>
 
-    function checkPassword() {
-      const input = document.getElementById('password').value.trim();
+  <button class="btn-ghost" id="resetBtn" style="display:block; margin:0 auto;">Alles resetten</button>
+  <p class="footer-note">Gegevens worden automatisch bewaard op dit apparaat.</p>
+</div>
 
-      if (input === "zeba1926" || input === "1234") {
-        document.getElementById('auth-section').style.display = 'none';
-        document.getElementById('app-section').style.display = 'block';
-        loadTransactions();
-      } else {
-        alert("Onjuist wachtwoord!");
+<script>
+const STORE_KEY = 'kasboek-data';
+const PRESETS_KEY = 'kasboek-winkels';
+let data = { total: 4000, transactions: [] };
+
+async function storageGetValue(key) {
+  if (window.storage && typeof window.storage.get === 'function') {
+    try {
+      const res = await window.storage.get(key, false);
+      return res && res.value !== undefined ? res.value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+
+async function storageSetValue(key, value) {
+  if (window.storage && typeof window.storage.set === 'function') {
+    try {
+      await window.storage.set(key, value, false);
+      return;
+    } catch (e) {
+    }
+  }
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.error('Opslaan mislukt', e);
+  }
+}
+
+let PRESETS = [
+  'Markt + basismarkt + Indiagate + vleeswinkel',
+  'Jumbo + Aldi',
+  'Makro',
+  'IKEA',
+  'Action',
+  'Albertijen'
+];
+
+async function loadPresets() {
+  const value = await storageGetValue(PRESETS_KEY);
+  if (value) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed) && parsed.length) PRESETS = parsed;
+    } catch (e) {}
+  }
+}
+
+async function savePresets() {
+  await storageSetValue(PRESETS_KEY, JSON.stringify(PRESETS));
+}
+
+function renderPresetSelect() {
+  const select = document.getElementById('presetSelect');
+  select.innerHTML = '<option value="">— kies een winkel —</option>';
+  PRESETS.forEach((label, i) => {
+    const opt = document.createElement('option');
+    opt.value = label;
+    opt.textContent = (i + 1) + '. ' + label;
+    select.appendChild(opt);
+  });
+}
+
+document.getElementById('presetSelect').addEventListener('change', (e) => {
+  document.getElementById('noteInput').value = e.target.value;
+  const removeBtn = document.getElementById('removePresetBtn');
+  removeBtn.style.display = e.target.value ? 'block' : 'none';
+  removeBtn.textContent = '✕';
+  removeBtn.dataset.armed = '';
+});
+
+document.getElementById('removePresetBtn').addEventListener('click', async (e) => {
+  const select = document.getElementById('presetSelect');
+  const value = select.value;
+  if (!value) return;
+  const btn = e.currentTarget;
+  if (btn.dataset.armed !== 'yes') {
+    btn.dataset.armed = 'yes';
+    btn.textContent = '?';
+    setTimeout(() => {
+      if (btn.dataset.armed === 'yes') {
+        btn.dataset.armed = '';
+        btn.textContent = '✕';
       }
-    }
+    }, 4000);
+    return;
+  }
+  PRESETS = PRESETS.filter(p => p !== value);
+  await savePresets();
+  renderPresetSelect();
+  select.value = '';
+  document.getElementById('noteInput').value = '';
+  btn.style.display = 'none';
+  btn.dataset.armed = '';
+  btn.textContent = '✕';
+});
 
-    function addTransaction() {
-      const desc = document.getElementById('desc').value;
-      const amount = document.getElementById('amount').value;
-      if (desc && amount) {
-        database.ref('transactions').push({
-          desc: desc,
-          amount: amount,
-          date: new Date().toISOString()
-        });
-        document.getElementById('desc').value = '';
-        document.getElementById('amount').value = '';
-      }
-    }
+document.getElementById('addPresetBtn').addEventListener('click', () => {
+  const row = document.getElementById('newPresetRow');
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    document.getElementById('newPresetInput').value = '';
+    document.getElementById('newPresetInput').focus();
+  }
+});
 
-    function loadTransactions() {
-      database.ref('transactions').on('value', (snapshot) => {
-        const list = document.getElementById('transaction-list');
-        list.innerHTML = '';
-        const data = snapshot.val();
-        for (let id in data) {
-          const item = data[id];
-          const li = document.createElement('li');
-          li.textContent = `${item.desc}: €${item.amount}`;
-          list.appendChild(li);
-        }
-      });
-    }
-  </script>
+async function saveNewPreset() {
+  const input = document.getElementById('newPresetInput');
+  const name = input.value.trim();
+  if (!name) {
+    input.focus();
+    return;
+  }
+  PRESETS.push(name);
+  await savePresets();
+  renderPresetSelect();
+  document.getElementById('presetSelect').value = name;
+  document.getElementById('noteInput').value = name;
+  document.getElementById('newPresetRow').style.display = 'none';
+  input.value = '';
+}
+
+document.getElementById('confirmPresetBtn').addEventListener('click', saveNewPreset);
+document.getElementById('newPresetInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    saveNewPreset();
+  }
+});
+
+function fmt(n) {
+  return '€ ' + n.toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+async function load() {
+  const value = await storageGetValue(STORE_KEY);
+  if (value) {
+    try {
+      data = JSON.parse(value);
+      if (typeof data.total !== 'number') data.total = 4000;
+      if (!Array.isArray(data.transactions)) data.transactions = [];
+    } catch (e) {}
+  }
+  document.getElementById('dateInput').value = todayStr();
+  document.getElementById('startAmount').value = data.total;
+  await loadPresets();
+  renderPresetSelect();
+  render();
+}
+
+function getSpentSoFar() {
+  return data.transactions.reduce((s, t) => s + t.amount, 0);
+}
+
+async function save() {
+  await storageSetValue(STORE_KEY, JSON.stringify(data));
+}
+
+function monthKey(dateStr) {
+  return dateStr.slice(0,7);
+}
+function yearKey(dateStr) {
+  return dateStr.slice(0,4);
+}
+const monthNames = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+function render() {
+  const spent = getSpentSoFar();
+  const startAmount = data.total;
+  const balance = startAmount - spent;
+
+  document.getElementById('balanceAmount').textContent = fmt(balance);
+  document.getElementById('balanceSub').textContent = 'van ' + fmt(startAmount) + ' totaal';
+
+  const now = new Date();
+  const curMonth = now.toISOString().slice(0,7);
+  const curYear = String(now.getFullYear());
+  const curMonthName = monthNames[now.getMonth()];
+
+  document.getElementById('monthLabel').textContent = curMonthName.charAt(0).toUpperCase() + curMonthName.slice(1) + ' ' + curYear + ' opgenomen';
+  document.getElementById('yearLabel').textContent = curYear + ' opgenomen';
+
+  const monthSum = data.transactions.filter(t => monthKey(t.date) === curMonth).reduce((s,t) => s + t.amount, 0);
+  const yearSum = data.transactions.filter(t => yearKey(t.date) === curYear).reduce((s,t) => s + t.amount, 0);
+  document.getElementById('monthTotal').textContent = fmt(monthSum);
+  document.getElementById('yearTotal').textContent = fmt(yearSum);
+
+  renderHistory(balance, startAmount);
+}
+
+function renderHistory(finalBalance, startAmount) {
+  const container = document.getElementById('history');
+  const grandTotalEl = document.getElementById('grandTotal');
+  if (data.transactions.length === 0) {
+    container.innerHTML = '<div class="empty">Nog geen opnames geboekt.</div>';
+    grandTotalEl.style.display = 'none';
+    return;
+  }
+
+  const sorted = [...data.transactions].sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+  let running = startAmount;
+  const withRunning = sorted.map(t => {
+    running -= t.amount;
+    return { ...t, runningAfter: running };
+  });
+
+  const groups = {};
+  withRunning.forEach(t => {
+    const mk = monthKey(t.date);
+    if (!groups[mk]) groups[mk] = [];
+    groups[mk].push(t);
+  });
+
+  const monthKeys = Object.keys(groups).sort().reverse();
+  let html = '';
+  monthKeys.forEach((mk, idx) => {
+    const [y, m] = mk.split('-');
+    const label = monthNames[parseInt(m,10)-1] + ' ' + y;
+    const entries = groups[mk];
+    const monthSpent = entries.reduce((s,t) => s + t.amount, 0);
+    const openClass = idx === 0 ? 'open' : '';
+    html += `<div class="month-group">
+      <div class="month-head" onclick="toggleMonth('${mk}')">
+        <span class="name">${label}</span>
+        <span class="total">-${fmt(monthSpent)}</span>
+      </div>
+      <div class="entries ${openClass}" id="month-${mk}">`;
+    [...entries].reverse().forEach(t => {
+      const dateDisp = t.date.split('-').reverse().join('-');
+      html += `<div class="entry">
+        <span class="when">${dateDisp} ${t.time || ''}</span>
+        <span class="note">${t.note ? escapeHtml(t.note) : '—'}</span>
+        <span class="amt">-${fmt(t.amount)}</span>
+        <span class="del" onclick="removeTx('${t.id}')">verwijder</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+
+  const totalSpentAllTime = withRunning.reduce((s,t) => s + t.amount, 0);
+  grandTotalEl.style.display = 'flex';
+  grandTotalEl.innerHTML = `<span>Totaal opgenomen (alle tijd)</span><span>${fmt(totalSpentAllTime)}</span>`;
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function toggleMonth(mk) {
+  const el = document.getElementById('month-' + mk);
+  if (el) el.classList.toggle('open');
+}
+window.toggleMonth = toggleMonth;
+
+async function removeTx(id) {
+  data.transactions = data.transactions.filter(t => t.id !== id);
+  await save();
+  render();
+}
+window.removeTx = removeTx;
+
+document.getElementById('setStartBtn').addEventListener('click', async () => {
+  const val = parseFloat(document.getElementById('startAmount').value);
+  if (isNaN(val) || val < 0) return;
+  data.total = val;
+  await save();
+  render();
+});
+
+document.getElementById('addBtn').addEventListener('click', async () => {
+  const errEl = document.getElementById('errMsg');
+  errEl.style.display = 'none';
+  const amount = parseFloat(document.getElementById('amountInput').value);
+  const date = document.getElementById('dateInput').value;
+  const note = document.getElementById('noteInput').value.trim();
+
+  if (isNaN(amount) || amount <= 0) {
+    errEl.textContent = 'Vul een geldig bedrag in.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!date) {
+    errEl.textContent = 'Kies een datum.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const now = new Date();
+  const time = now.toTimeString().slice(0,5);
+  const id = 'tx_' + now.getTime() + '_' + Math.random().toString(36).slice(2,7);
+
+  data.transactions.push({ id, amount, date, time, note });
+  await save();
+
+  document.getElementById('amountInput').value = '';
+  document.getElementById('noteInput').value = '';
+  document.getElementById('dateInput').value = todayStr();
+  document.getElementById('presetSelect').value = '';
+  document.getElementById('removePresetBtn').style.display = 'none';
+
+  render();
+});
+
+let resetArmed = false;
+document.getElementById('resetBtn').addEventListener('click', async (e) => {
+  if (!resetArmed) {
+    resetArmed = true;
+    e.target.textContent = 'Weet je het zeker? Klik nogmaals';
+    e.target.style.color = 'var(--debit)';
+    e.target.style.borderColor = 'var(--debit)';
+    setTimeout(() => {
+      resetArmed = false;
+      e.target.textContent = 'Alles resetten';
+      e.target.style.color = '';
+      e.target.style.borderColor = '';
+    }, 4000);
+    return;
+  }
+  resetArmed = false;
+  data = { total: 4000, transactions: [] };
+  await save();
+  document.getElementById('startAmount').value = 4000;
+  e.target.textContent = 'Alles resetten';
+  e.target.style.color = '';
+  e.target.style.borderColor = '';
+  render();
+});
+
+const UNLOCK_KEY = 'kasboek-unlocked';
+
+function unlockApp() {
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  load();
+}
+
+function tryUnlock() {
+  const input = document.getElementById('lockPassword');
+  const errEl = document.getElementById('lockErr');
+  const value = input.value.trim();
+
+  if (!value) {
+    errEl.textContent = 'Vul een wachtwoord in.';
+    return;
+  }
+
+  if (value === 'zeba1926' || value === '1234') {
+    try { localStorage.setItem(UNLOCK_KEY, 'yes'); } catch (e) {}
+    errEl.textContent = '';
+    unlockApp();
+  } else {
+    errEl.textContent = 'Onjuist wachtwoord, probeer opnieuw.';
+    input.value = '';
+    input.focus();
+  }
+}
+
+document.getElementById('lockSubmit').addEventListener('click', tryUnlock);
+document.getElementById('lockPassword').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    tryUnlock();
+  }
+});
+
+let alreadyUnlocked = false;
+try { alreadyUnlocked = localStorage.getItem(UNLOCK_KEY) === 'yes'; } catch (e) {}
+
+if (alreadyUnlocked) {
+  unlockApp();
+} else {
+  document.getElementById('lockPassword').focus();
+}
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
 </body>
 </html>
